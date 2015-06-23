@@ -156,6 +156,7 @@ public class AddCommand extends GitCommand<DirCache> {
 
 			while (tw.next()) {
 				String path = tw.getPathString();
+				System.out.println("Walked to next path:" + path);
 
 				WorkingTreeIterator f = tw.getTree(1, WorkingTreeIterator.class);
 				if (tw.getTree(0, DirCacheIterator.class) == null &&
