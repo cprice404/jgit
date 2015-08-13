@@ -75,8 +75,6 @@ public class FileTreeIterator extends WorkingTreeIterator {
 	 */
 	protected final FS fs;
 
-	protected final DirectoryFlags directoryFlags;
-
 	/**
 	 * Create a new iterator to traverse the work tree and its children.
 	 *
@@ -85,8 +83,7 @@ public class FileTreeIterator extends WorkingTreeIterator {
 	 */
 	public FileTreeIterator(Repository repo) {
 		this(repo.getWorkTree(), repo.getFS(),
-				repo.getConfig().get(WorkingTreeOptions.KEY),
-				repo.getDirectoryFlags());
+				repo.getConfig().get(WorkingTreeOptions.KEY));
 		initRootIterator(repo);
 	}
 
@@ -103,16 +100,10 @@ public class FileTreeIterator extends WorkingTreeIterator {
 	 *            working tree options to be used
 	 */
 	public FileTreeIterator(final File root, FS fs, WorkingTreeOptions options) {
-		this(root, fs, options, DirectoryFlags.DEFAULTS);
-	}
-
-	// TODO: docs
-	public FileTreeIterator(final File root, FS fs, WorkingTreeOptions options, DirectoryFlags directoryFlags) {
 		super(options);
 		directory = root;
 		this.fs = fs;
-		this.directoryFlags = directoryFlags;
-		init(entries());
+		init(entries(options));
 	}
 
 	/**
@@ -129,31 +120,25 @@ public class FileTreeIterator extends WorkingTreeIterator {
 	 */
 	protected FileTreeIterator(final WorkingTreeIterator p, final File root,
 			FS fs) {
-		this(p, root, fs, DirectoryFlags.DEFAULTS);
-	}
-
-	// TODO: docs
-	protected FileTreeIterator(final WorkingTreeIterator p, final File root, FS fs, DirectoryFlags directoryFlags) {
 		super(p);
 		directory = root;
 		this.fs = fs;
-		this.directoryFlags = directoryFlags;
-		init(entries());
+		init(entries(p.getOptions()));
 	}
 
 	@Override
 	public AbstractTreeIterator createSubtreeIterator(final ObjectReader reader)
 			throws IncorrectObjectTypeException, IOException {
-		return new FileTreeIterator(this, ((FileEntry) current()).getFile(), fs, directoryFlags);
+		return new FileTreeIterator(this, ((FileEntry) current()).getFile(), fs);
 	}
 
-	private Entry[] entries() {
+	private Entry[] entries(WorkingTreeOptions options) {
 		final File[] all = directory.listFiles();
 		if (all == null)
 			return EOF;
 		final Entry[] r = new Entry[all.length];
 		for (int i = 0; i < r.length; i++)
-			r[i] = new FileEntry(all[i], fs, directoryFlags);
+			r[i] = new FileEntry(options, all[i], fs);
 		return r;
 	}
 
@@ -170,28 +155,30 @@ public class FileTreeIterator extends WorkingTreeIterator {
 		/**
 		 * Create a new file entry.
 		 *
+		 * @param options TODO TODO TODO
+		 *
 		 * @param f
 		 *            file
 		 * @param fs
 		 *            file system
 		 */
-		public FileEntry(File f, FS fs) {
-			this(f, fs, DirectoryFlags.DEFAULTS);
-		}
-
-		// TODO: docs
-		public FileEntry(File f, FS fs, DirectoryFlags directoryFlags) {
+		public FileEntry(WorkingTreeOptions options, File f, FS fs) {
 			this.fs = fs;
 			f = fs.normalize(f);
 			attributes = fs.getAttributes(f);
 			if (attributes.isSymbolicLink())
 				mode = FileMode.SYMLINK;
 			else if (attributes.isDirectory()) {
-				if ((new File(f, Constants.DOT_GIT).exists()) && gitLinksEnabled(directoryFlags)) {
+				if ((new File(f, Constants.DOT_GIT).exists()) && gitLinksEnabled(options)) {
 					mode = FileMode.GITLINK;
 				} else {
 					mode = FileMode.TREE;
 				}
+
+////				if (new File(f, Constants.DOT_GIT).exists())
+////					mode = FileMode.GITLINK;
+////				else
+//					mode = FileMode.TREE;
 			} else if (attributes.isExecutable())
 				mode = FileMode.EXECUTABLE_FILE;
 			else
@@ -237,10 +224,14 @@ public class FileTreeIterator extends WorkingTreeIterator {
 			return attributes.getFile();
 		}
 
-		// TODO: docs
-		private boolean gitLinksEnabled(DirectoryFlags directoryFlags) {
-			return directoryFlags == null || !directoryFlags.isNoGitLinks();
+//		// TODO: docs
+//		private boolean gitLinksEnabled(DirectoryFlags directoryFlags) {
+//			return directoryFlags == null || !directoryFlags.isNoGitLinks();
+//		}
+		private boolean gitLinksEnabled(WorkingTreeOptions options) {
+			return ! options.isDirNoGitLinks();
 		}
+
 	}
 
 	/**

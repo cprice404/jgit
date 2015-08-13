@@ -1,4 +1,4 @@
-package org.eclipse.jgit.lib;
+package org.eclipse.jgit.api;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.Status;
@@ -6,8 +6,12 @@ import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.RawTextComparator;
 import org.eclipse.jgit.junit.LocalDiskRepositoryTestCase;
+//import org.eclipse.jgit.lib.DirectoryFlags;
+import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.treewalk.FileTreeIterator;
+import org.eclipse.jgit.treewalk.WorkingTreeOptions;
 import org.eclipse.jgit.util.FileUtils;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
 import org.junit.Test;
@@ -17,15 +21,15 @@ import java.io.PrintWriter;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class DirectoryFlagsTest extends LocalDiskRepositoryTestCase {
+public class WorkingTreeOptionsTest extends LocalDiskRepositoryTestCase {
     private Repository createRepoWithNestedRepo() throws Exception {
-        DirectoryFlags flags = new DirectoryFlags();
-        flags.setNoGitLinks(true);
+//        DirectoryFlags flags = new DirectoryFlags();
+//        flags.setNoGitLinks(true);
 
         File gitdir = createUniqueTestGitDir(false);
         FileRepositoryBuilder builder = new FileRepositoryBuilder();
         builder.setGitDir(gitdir);
-        builder.setDirectoryFlags(flags);
+//        builder.setDirectoryFlags(flags);
         Repository db = builder.build();
         db.create();
         // TODO: add cleanup logic?  This is based on `createRepository` in
@@ -51,9 +55,14 @@ public class DirectoryFlagsTest extends LocalDiskRepositoryTestCase {
     @Test
     public void testAddFileWithNoGitLinks() throws Exception {
         Repository db = createRepoWithNestedRepo();
+        WorkingTreeOptions options = db.getConfig().get(WorkingTreeOptions.KEY);
+        options.setDirNoGitLinks(true);
 
         System.out.println("Calling add command");
         Git git = new Git(db);
+//        WorkingTreeOptions options = new WorkingTreeOptions();
+//        FileTreeIterator iterator = new FileTreeIterator(db, options);
+//        git.add().setWorkingTreeIterator(iterator).addFilepattern("sub/nested/a.txt").call();
         git.add().addFilepattern("sub/nested/a.txt").call();
         System.out.println("Back from calling add command");
 
@@ -65,6 +74,8 @@ public class DirectoryFlagsTest extends LocalDiskRepositoryTestCase {
     @Test
     public void testStatusWithNoGitLinks() throws Exception {
         Repository db = createRepoWithNestedRepo();
+        WorkingTreeOptions options = db.getConfig().get(WorkingTreeOptions.KEY);
+        options.setDirNoGitLinks(true);
 
         Git git = new Git(db);
 
@@ -80,6 +91,8 @@ public class DirectoryFlagsTest extends LocalDiskRepositoryTestCase {
     @Test
     public void testCommitFileWithNoGitLinks() throws Exception {
         Repository db = createRepoWithNestedRepo();
+        WorkingTreeOptions options = db.getConfig().get(WorkingTreeOptions.KEY);
+        options.setDirNoGitLinks(true);
 
         Git git = new Git(db);
 
